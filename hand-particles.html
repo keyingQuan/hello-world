@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>手势粒子宇宙 · Hand Particle Universe</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --panel-bg: rgba(16,18,28,.62);
+    --panel-border: rgba(255,255,255,.10);
+    --accent:#4ee0c2;
+    --text:#e8ecf4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;overflow:hidden;background:#04060c;font-family:-apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,sans-serif;color:var(--text)}
+  #scene{position:fixed;inset:0;display:block}
+
+  .glass{
+    background:var(--panel-bg);
+    border:1px solid var(--panel-border);
+    border-radius:16px;
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    box-shadow:0 8px 32px rgba(0,0,0,.35);
+  }
+
+  #ui{position:fixed;top:16px;left:16px;padding:14px 16px;width:236px;user-select:none;z-index:10;transition:opacity .3s}
+  #ui h1{font-size:14px;font-weight:600;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  #ui h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{
+    flex:0 0 calc(50% - 3px);
+    padding:7px 4px;border-radius:10px;border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.05);color:var(--text);font-size:12.5px;cursor:pointer;
+    text-align:center;transition:all .18s;
+  }
+  .chip:hover{background:rgba(255,255,255,.12)}
+  .chip.active{background:rgba(78,224,194,.18);border-color:var(--accent);color:var(--accent)}
+  .sec{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)}
+  .row{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:#aab3c5}
+  .row label{flex:0 0 56px}
+  input[type=range]{flex:1;appearance:none;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,.18);outline:none}
+  input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 8px rgba(78,224,194,.6)}
+  input[type=color]{width:34px;height:26px;border:none;border-radius:8px;background:none;cursor:pointer;padding:0}
+  input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+  input[type=color]::-webkit-color-swatch{border:1px solid rgba(255,255,255,.25);border-radius:8px}
+
+  #fsBtn{
+    position:fixed;top:16px;right:16px;z-index:10;width:42px;height:42px;
+    font-size:18px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:all .2s;
+  }
+  #fsBtn:hover{color:var(--accent);border-color:var(--accent)}
+
+  #camBox{position:fixed;top:70px;right:16px;width:176px;height:132px;overflow:hidden;z-index:9;border-radius:14px}
+  #camBox video,#camBox canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+  #camBox .tag{position:absolute;left:8px;bottom:6px;font-size:10px;color:rgba(255,255,255,.75);z-index:3;text-shadow:0 1px 3px #000}
+
+  #status{
+    position:fixed;left:50%;bottom:20px;transform:translateX(-50%);
+    padding:9px 18px;font-size:13px;z-index:10;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;
+    border-radius:999px;
+  }
+  #status b{color:var(--accent);font-weight:600}
+
+  #err{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);padding:22px 28px;z-index:20;display:none;max-width:420px;font-size:14px;line-height:1.7;border-radius:16px}
+  @media (max-width:640px){
+    #ui{width:190px;padding:10px}
+    #camBox{width:128px;height:96px}
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<div id="ui" class="glass">
+  <h1><span class="dot"></span>手势粒子宇宙</h1>
+  <div class="chips" id="chips">
+    <button class="chip active" data-shape="heart">❤️ 爱心</button>
+    <button class="chip" data-shape="flower">🌸 花朵</button>
+    <button class="chip" data-shape="saturn">🪐 土星</button>
+    <button class="chip" data-shape="fireworks">🎆 烟花</button>
+    <button class="chip" data-shape="earth">🌍 地球</button>
+    <button class="chip" data-shape="shanshui">🏔 千里江山</button>
+    <button class="chip" data-shape="epiphyllum">🌼 昙花</button>
+  </div>
+  <div class="sec">
+    <div class="row"><label>粒子颜色</label><input type="color" id="tint" value="#4ee0c2"><input type="range" id="tintAmt" min="0" max="100" value="0" title="染色强度"></div>
+    <div class="row"><label>细腻度</label><input type="range" id="psize" min="10" max="60" value="32"></div>
+    <div class="row"><label>亮度</label><input type="range" id="bright" min="40" max="140" value="95"></div>
+  </div>
+</div>
+
+<button id="fsBtn" class="glass" title="全屏">⛶</button>
+
+<div id="camBox" class="glass">
+  <video id="video" playsinline muted></video>
+  <canvas id="handCanvas" width="320" height="240"></canvas>
+  <div class="tag" id="camTag">摄像头启动中…</div>
+</div>
+
+<div id="status" class="glass">初始化中…</div>
+<div id="err" class="glass"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.js"></script>
+<script>
+(function(){
+'use strict';
+const errBox=document.getElementById('err');
+function fatal(msg){errBox.style.display='block';errBox.innerHTML=msg;}
+if(typeof THREE==='undefined'){fatal('⚠️ 无法加载 Three.js。<br>本页面需要联网加载渲染库，请检查网络后刷新。');return;}
+
+/* ---------------- 基础常量 ---------------- */
+const N=16000;                                  // 粒子数量（细腻）
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const mix=(a,b,t)=>a+(b-a)*t;
+function unit(){const z=Math.random()*2-1,a=Math.random()*Math.PI*2,r=Math.sqrt(1-z*z);return[r*Math.cos(a),z,r*Math.sin(a)];}
+const _c=new THREE.Color();
+function hsl(h,s,l){_c.setHSL(((h%1)+1)%1,clamp(s,0,1),clamp(l,0,1));return[_c.r,_c.g,_c.b];}
+
+/* ---------------- 形状生成器 ---------------- */
+function genHeart(){
+  const pos=new Float32Array(N*3),col=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    let hx,hy,f;
+    do{ // 隐式心形方程内均匀采样：(x²+y²-1)³ − x²y³ ≤ 0
+      hx=(Math.random()*2-1)*1.35; hy=(Math.random()*2-1)*1.35;
+      f=Math.pow(hx*hx+hy*hy-1,3)-hx*hx*hy*hy*hy;
+    }while(f>0);
+    const z=(Math.random()-0.5)*1.05*Math.min(1,Math.pow(-f,0.4));
+    const s=Math.min(1,Math.hypot(hx,hy)/1.25);
+    pos.set([hx*1.55,hy*1.55+0.05,z],i*3);
+    col.set(hsl(0.965-0.045*s,0.9,mix(0.56,0.8,1-s)+Math.random()*0.08),i*3);
+  }
+  return{pos,col};
+}
+function genFlower(){
+  const pos=new Float32Array(N*3),col=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    let x,y,z,c;
+    if(Math.random()<0.14){                       // 金色花蕊
+      const d=unit(),r=Math.pow(Math.random(),0.5)*0.38;
+      x=d[0]*r; z=d[2]*r; y=d[1]*r*0.45+0.18;
+      c=hsl(0.12,0.95,0.5+Math.random()*0.2);
+    }else{                                        // 六瓣花瓣
+      const p=Math.floor(Math.random()*6), u=Math.random(), v=Math.random();
+      const w=Math.pow(Math.sin(Math.PI*Math.min(u,0.995)),0.8);
+      const ang=p*Math.PI/3+(v-0.5)*0.72*w;
+      const r=0.25+u*2.05;
+      x=Math.cos(ang)*r; z=Math.sin(ang)*r;
+      y=0.5*Math.sin(u*Math.PI*0.9)-0.62*u*u+0.12+(Math.random()-0.5)*0.07;
+      c=hsl(mix(0.93,0.97,u),mix(0.85,0.35,u),mix(0.58,0.9,u)+Math.random()*0.05);
+    }
+    pos.set([x,y,z],i*3); col.set(c,i*3);
+  }
+  return{pos,col};
+}
+function genSaturn(){
+  const pos=new Float32Array(N*3),col=new Float32Array(N*3),tilt=0.44;
+  for(let i=0;i<N;i++){
+    let x,y,z,c;
+    if(Math.random()<0.5){                        // 星球本体（条纹）
+      const d=unit(),r=1.08*(0.985+Math.random()*0.03);
+      x=d[0]*r; y=d[1]*r; z=d[2]*r;
+      const band=Math.sin(d[1]*9)*0.5+Math.sin(d[1]*17+1.5)*0.3;
+      c=hsl(0.09+band*0.02,0.5,0.5+band*0.11+Math.random()*0.04);
+    }else{                                        // 光环（含卡西尼缝）
+      const a=Math.random()*Math.PI*2;
+      let rr=1.5+Math.pow(Math.random(),0.8)*1.05;
+      if(rr>2.0&&rr<2.12&&Math.random()<0.88) rr+=0.2;
+      x=Math.cos(a)*rr; z=Math.sin(a)*rr; y=(Math.random()-0.5)*0.025;
+      c=hsl(0.08,0.24,mix(0.32,0.72,(rr-1.5)/1.05)+(Math.random()-0.5)*0.12);
+    }
+    const y2=y*Math.cos(tilt)-z*Math.sin(tilt), z2=y*Math.sin(tilt)+z*Math.cos(tilt);
+    pos.set([x,y2,z2],i*3); col.set(c,i*3);
+  }
+  return{pos,col};
+}
+function genFireworks(){
+  const pos=new Float32Array(N*3),col=new Float32Array(N*3),bursts=[];
+  for(let b=0;b<5;b++){
+    const rays=[],nr=70+Math.floor(Math.random()*40);
+    for(let k=0;k<nr;k++)rays.push(unit());
+    bursts.push({cx:(Math.random()-0.5)*3.8,cy:(Math.random()-0.5)*2.6,cz:(Math.random()-0.5)*2.0,
+                 R:0.7+Math.random()*0.95,hue:Math.random(),rays});
+  }
+  for(let i=0;i<N;i++){
+    const B=bursts[i%bursts.length];
+    const ray=B.rays[Math.floor(Math.random()*B.rays.length)];
+    const t=Math.pow(Math.random(),0.5), r=B.R*t, j=0.05;
+    pos.set([B.cx+ray[0]*r+(Math.random()-0.5)*j,
+             B.cy+ray[1]*r+(Math.random()-0.5)*j,
+             B.cz+ray[2]*r+(Math.random()-0.5)*j],i*3);
+    col.set(t>0.93?hsl(B.hue,0.3,0.9):hsl(B.hue+(Math.random()-0.5)*0.05,0.95,mix(0.35,0.68,t)),i*3);
+  }
+  return{pos,col};
+}
+function genEarth(){
+  const pos=new Float32Array(N*3),col=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    const d=unit(),r=1.58*(0.995+Math.random()*0.012);
+    const f=Math.sin(d[0]*3.1+1.7)+0.8*Math.sin(d[1]*4.3+2.1)+0.9*Math.sin(d[2]*3.7+4.2)
+           +0.6*Math.sin((d[0]+d[1])*5.3)+0.5*Math.sin((d[1]+d[2])*7.1+1.0);
+    let c;
+    if(Math.abs(d[1])>0.9)      c=hsl(0.55,0.12,0.88+Math.random()*0.08);          // 极地冰盖
+    else if(f>0.95)             c=hsl(0.29+Math.random()*0.06,0.55,mix(0.26,0.46,Math.random())); // 陆地
+    else if(f>0.72)             c=hsl(0.12,0.42,0.4+Math.random()*0.08);           // 海岸/荒漠
+    else                        c=hsl(0.585+(Math.random()-0.5)*0.02,0.78,mix(0.22,0.44,(f+2.8)/3.5)); // 海洋
+    pos.set([d[0]*r,d[1]*r,d[2]*r],i*3); col.set(c,i*3);
+  }
+  return{pos,col};
+}
+function genShanshui(){                            // 千里江山 · 青绿山水
+  const pos=new Float32Array(N*3),col=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    let x,y,z,c;
+    const r=Math.random();
+    if(r<0.08){                                    // 江面波光
+      x=(Math.random()*2-1)*3.4; z=1.7+(Math.random()-0.5)*0.55;
+      y=-1.42+Math.random()*0.06+0.02*Math.sin(x*7);
+      c=Math.random()<0.12?hsl(0.5,0.5,0.62):hsl(0.53,0.55,0.24+Math.random()*0.14);
+    }else if(r<0.12){                              // 山腰云雾
+      const l=Math.floor(Math.random()*4);
+      x=(Math.random()*2-1)*3.2; z=1.1-l*0.62;
+      y=-0.9+l*0.46+(Math.random()-0.5)*0.1;
+      c=hsl(0.5,0.12,0.5+Math.random()*0.12);
+    }else{                                         // 5 层山峦，粒子密贴山脊
+      const l=Math.floor(Math.pow(Math.random(),1.35)*5);
+      x=(Math.random()*2-1)*3.4;
+      const ph=l*2.399+1.3;
+      const h=0.62*Math.pow(Math.abs(Math.sin(x*0.62+ph)),0.6)
+             +0.22*Math.sin(x*1.9+ph*2.1)+0.1*Math.sin(x*4.3+ph);
+      const top=-0.8+l*0.46+Math.max(h,-0.1);
+      const hue=l%2?0.455:0.545;                                 // 石绿 / 石青
+      if(Math.random()<0.34){                                    // 发光山脊线
+        y=top-Math.random()*0.045;
+        c=Math.random()<0.1?hsl(0.125,0.7,0.72)                  // 点缀金线
+                           :hsl(hue,0.8,0.58+l*0.04+Math.random()*0.08);
+      }else{                                                     // 暗色山体
+        const dep=0.05+Math.pow(Math.random(),1.7)*0.8;
+        y=Math.max(top-dep,-1.38);
+        const tt=clamp((top-y)/0.85,0,1);
+        c=hsl(hue,0.6-l*0.06,mix(0.26,0.07,tt)+l*0.03);
+      }
+      z=1.4-l*0.62+(Math.random()-0.5)*0.18;
+    }
+    pos.set([x,y*0.9+0.35,z],i*3); col.set(c,i*3);
+  }
+  return{pos,col};
+}
+function genEpiphyllum(){                          // 昙花 · 月下美人
+  const pos=new Float32Array(N*3),col=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    const k=Math.random(); let th,rho,y,c;
+    if(k<0.5){                                     // 内层白瓣 ×12 喇叭形
+      const p=Math.floor(Math.random()*12),u=Math.pow(Math.random(),0.75),v=Math.random();
+      const w=Math.pow(Math.sin(Math.PI*Math.min(u,0.995)),0.75);
+      th=p*(Math.PI*2/12)+(v-0.5)*0.30*w;
+      const droop=0.15*((p*0.618)%1);
+      rho=0.12+1.75*Math.pow(u,1.15);
+      y=-0.55+1.55*u-(0.5+droop)*u*u;
+      c=hsl(0.14,mix(0.3,0.02,u),mix(0.78,0.99,u));
+    }else if(k<0.72){                              // 外层反卷萼片 ×10（微红）
+      const p=Math.floor(Math.random()*10),u=Math.pow(Math.random(),0.85),v=Math.random();
+      const w=Math.pow(Math.sin(Math.PI*Math.min(u,0.995)),0.75);
+      th=p*(Math.PI*2/10)+0.31+(v-0.5)*0.14*w;
+      rho=0.1+2.25*u;
+      y=-0.55+1.15*u-1.35*u*u;
+      c=hsl(0.05,mix(0.2,0.6,u),mix(0.75,0.52,u));
+    }else if(k<0.93){                              // 花丝喷泉 ×70
+      const f=Math.floor(Math.random()*70),u=Math.random();
+      th=f*2.3999;
+      rho=(0.1+0.55*u+0.25*u*u)*(0.7+0.6*((f*0.37)%1));
+      y=-0.45+1.35*u;
+      c=u>0.92?hsl(0.13,0.75,0.85):hsl(0.13,0.45,0.72);
+    }else{                                         // 花心微光
+      const d=unit(),r=Math.pow(Math.random(),0.6)*0.2;
+      pos.set([d[0]*r,d[1]*r-0.4,d[2]*r],i*3); col.set(hsl(0.14,0.3,0.9),i*3);
+      continue;
+    }
+    const x=Math.cos(th)*rho+(Math.random()-0.5)*0.035;
+    const z=Math.sin(th)*rho+(Math.random()-0.5)*0.035;
+    pos.set([x,y+(Math.random()-0.5)*0.035+0.1,z],i*3); col.set(c,i*3);
+  }
+  return{pos,col};
+}
+const GEN={heart:genHeart,flower:genFlower,saturn:genSaturn,fireworks:genFireworks,
+           earth:genEarth,shanshui:genShanshui,epiphyllum:genEpiphyllum};
+const cache={};
+function getShape(name){if(!cache[name])cache[name]=GEN[name]();return cache[name];}
+
+/* ---------------- Three.js 场景 ---------------- */
+const canvas=document.getElementById('scene');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x04060c,0.045);
+const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,0.1,100);
+camera.position.set(0,0,6);
+
+function dotTexture(){
+  const cv=document.createElement('canvas');cv.width=cv.height=64;
+  const g=cv.getContext('2d');
+  const grd=g.createRadialGradient(32,32,0,32,32,32);
+  grd.addColorStop(0,'rgba(255,255,255,1)');
+  grd.addColorStop(0.35,'rgba(255,255,255,.65)');
+  grd.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=grd;g.fillRect(0,0,64,64);
+  return new THREE.CanvasTexture(cv);
+}
+const geo=new THREE.BufferGeometry();
+const posArr=new Float32Array(N*3), colArr=new Float32Array(N*3);
+geo.setAttribute('position',new THREE.BufferAttribute(posArr,3));
+geo.setAttribute('color',new THREE.BufferAttribute(colArr,3));
+const mat=new THREE.PointsMaterial({size:0.032,map:dotTexture(),vertexColors:true,
+  transparent:true,opacity:0.95,depthWrite:false,blending:THREE.AdditiveBlending});
+const group=new THREE.Group();
+group.add(new THREE.Points(geo,mat));
+scene.add(group);
+
+// 背景星尘
+(function(){
+  const n=900,p=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const d=unit(),r=14+Math.random()*22;p.set([d[0]*r,d[1]*r,d[2]*r],i*3);}
+  const g2=new THREE.BufferGeometry();g2.setAttribute('position',new THREE.BufferAttribute(p,3));
+  scene.add(new THREE.Points(g2,new THREE.PointsMaterial({size:0.05,color:0x8899bb,
+    map:dotTexture(),transparent:true,opacity:0.5,depthWrite:false,blending:THREE.AdditiveBlending})));
+})();
+
+/* ---------------- 状态 & 颜色 ---------------- */
+let target=null, baseCol=null, currentShape='heart';
+const S={spread:1,spreadT:1,rotVel:0,rotVelT:0,camDist:6,camDistT:6};
+const tintPicker=document.getElementById('tint'),
+      tintAmt=document.getElementById('tintAmt'),
+      psize=document.getElementById('psize'),
+      bright=document.getElementById('bright');
+
+function applyColor(){
+  const amt=tintAmt.value/100, br=bright.value/100;
+  const tc=new THREE.Color(tintPicker.value);
+  for(let i=0;i<N*3;i+=3){
+    colArr[i]  =mix(baseCol[i],  tc.r,amt)*br;
+    colArr[i+1]=mix(baseCol[i+1],tc.g,amt)*br;
+    colArr[i+2]=mix(baseCol[i+2],tc.b,amt)*br;
+  }
+  geo.attributes.color.needsUpdate=true;
+}
+const AUTOROT={heart:0.0015,flower:0.002,saturn:0.002,fireworks:0.0008,earth:0.003,shanshui:0.00025,epiphyllum:0.0015};
+function setShape(name,init){
+  currentShape=name;
+  const s=getShape(name);
+  target=s.pos; baseCol=s.col;
+  if(init){posArr.set(s.pos);}
+  group.rotation.set(0,0,0);          // 每次切换回到正视角
+  applyColor();
+  document.querySelectorAll('.chip').forEach(b=>b.classList.toggle('active',b.dataset.shape===name));
+}
+setShape('heart',true);
+
+document.getElementById('chips').addEventListener('click',e=>{
+  const b=e.target.closest('.chip'); if(b)setShape(b.dataset.shape,false);
+});
+tintPicker.addEventListener('input',()=>{if(+tintAmt.value===0)tintAmt.value=70;applyColor();});
+tintAmt.addEventListener('input',applyColor);
+bright.addEventListener('input',applyColor);
+psize.addEventListener('input',()=>{mat.size=psize.value/1000;});
+
+/* ---------------- 全屏 ---------------- */
+const fsBtn=document.getElementById('fsBtn');
+fsBtn.addEventListener('click',()=>{
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+  else document.exitFullscreen();
+});
+document.addEventListener('fullscreenchange',()=>{fsBtn.textContent=document.fullscreenElement?'✕':'⛶';});
+
+/* ---------------- 手势识别 ---------------- */
+const statusEl=document.getElementById('status');
+const camTag=document.getElementById('camTag');
+const video=document.getElementById('video');
+const handCanvas=document.getElementById('handCanvas');
+const hctx=handCanvas.getContext('2d');
+const HINT='🖐 张合缩放 · ✊ 聚拢 · ☝️ 单指左右摇摆旋转 / 前后拉近拉远';
+let lastSeen=0;
+
+function setStatus(html){statusEl.innerHTML=html;}
+setStatus('等待摄像头授权… '+HINT);
+
+function onResults(res){
+  hctx.clearRect(0,0,handCanvas.width,handCanvas.height);
+  const has=res.multiHandLandmarks&&res.multiHandLandmarks.length;
+  if(!has){
+    if(performance.now()-lastSeen>800){S.rotVelT=0;setStatus('未检测到手 · '+HINT);}
+    return;
+  }
+  lastSeen=performance.now();
+  const lm=res.multiHandLandmarks[0];
+  if(typeof drawConnectors!=='undefined'){
+    drawConnectors(hctx,lm,HAND_CONNECTIONS,{color:'rgba(78,224,194,.9)',lineWidth:2});
+    drawLandmarks(hctx,lm,{color:'#ffffff',radius:1.8});
+  }
+  const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+  const palm=Math.max(d(lm[0],lm[9]),1e-4);
+  const ext=(tip,pip)=>d(lm[tip],lm[0])>d(lm[pip],lm[0])*1.12;
+  const idx=ext(8,6),midF=ext(12,10),ring=ext(16,14),pk=ext(20,18);
+
+  if(idx&&!midF&&!ring&&!pk){
+    // ☝️ 单指：左右摇摆 → 旋转；靠近/远离镜头 → 拉近拉远
+    const sway=clamp((0.5-lm[8].x)*2,-1,1);          // 镜像后的左右位置
+    S.rotVelT=sway*0.055;
+    const prox=clamp((palm-0.12)/(0.26-0.12),0,1);   // 手掌在画面中的大小 ≈ 距离
+    S.camDistT=mix(8.6,3.0,prox);
+    setStatus('☝️ <b>单指</b> · 摇摆旋转 '+(sway>0.15?'⟳':sway<-0.15?'⟲':'·')
+              +' &nbsp;距离 <b>'+Math.round(prox*100)+'%</b> 拉近拉远');
+  }else{
+    // 🖐/✊ 手掌张合 → 粒子聚拢 / 扩散
+    S.rotVelT=0;
+    let o=0;const tips=[8,12,16,20];
+    for(const t of tips)o+=d(lm[t],lm[0]);
+    o/=4*palm;
+    const open01=clamp((o-1.35)/(2.05-1.35),0,1);
+    S.spreadT=mix(0.28,1.8,open01);
+    setStatus((open01<0.2?'✊':'🖐')+' <b>手掌张合</b> · 开合度 <b>'
+              +Math.round(open01*100)+'%</b> → 粒子'+(open01<0.35?'聚拢':open01>0.75?'扩散':'呼吸'));
+  }
+}
+
+async function startHands(){
+  if(typeof Hands==='undefined'||typeof Camera==='undefined'){
+    camTag.textContent='⚠️ 识别库加载失败';
+    setStatus('⚠️ MediaPipe 加载失败（需联网）· 可用鼠标拖拽/滚轮交互');
+    return;
+  }
+  try{
+    const hands=new Hands({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/'+f});
+    hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:0.6,minTrackingConfidence:0.5});
+    hands.onResults(onResults);
+    const cam=new Camera(video,{onFrame:async()=>{await hands.send({image:video});},width:320,height:240});
+    await cam.start();
+    camTag.textContent='● 手势识别中';
+    setStatus(HINT);
+  }catch(e){
+    camTag.textContent='⚠️ 摄像头不可用';
+    setStatus('⚠️ 摄像头不可用（请允许权限或改用 Chrome 打开）· 可用鼠标拖拽/滚轮交互');
+  }
+}
+startHands();
+
+/* ---------------- 鼠标后备交互 ---------------- */
+let dragging=false,px=0,py=0;
+canvas.addEventListener('pointerdown',e=>{dragging=true;px=e.clientX;py=e.clientY;});
+addEventListener('pointerup',()=>dragging=false);
+addEventListener('pointermove',e=>{
+  if(!dragging)return;
+  group.rotation.y+=(e.clientX-px)*0.005;
+  group.rotation.x=clamp(group.rotation.x+(e.clientY-py)*0.003,-1,1);
+  px=e.clientX;py=e.clientY;
+});
+canvas.addEventListener('wheel',e=>{S.camDistT=clamp(S.camDistT+e.deltaY*0.004,2.5,12);},{passive:true});
+
+/* ---------------- 主循环 ---------------- */
+let prev=performance.now();
+function animate(now){
+  requestAnimationFrame(animate);
+  const dt=Math.min((now-prev)/16.7,3);prev=now;
+  const t=now*0.001;
+
+  S.spread+=(S.spreadT-S.spread)*0.085*dt;
+  S.camDist+=(S.camDistT-S.camDist)*0.06*dt;
+  S.rotVel+=(S.rotVelT-S.rotVel)*0.09*dt;
+  group.rotation.y+=(S.rotVel+AUTOROT[currentShape])*dt;
+  camera.position.z=S.camDist;
+  camera.lookAt(0,0,0);
+
+  const sp=S.spread,k=0.075*dt;
+  for(let i=0;i<N;i++){
+    const ix=i*3;
+    const wob=0.011*Math.sin(t*2.2+i*0.37);
+    posArr[ix]  +=(target[ix]*sp-posArr[ix])*k;
+    posArr[ix+1]+=(target[ix+1]*sp+wob-posArr[ix+1])*k;
+    posArr[ix+2]+=(target[ix+2]*sp-posArr[ix+2])*k;
+  }
+  geo.attributes.position.needsUpdate=true;
+  renderer.render(scene,camera);
+}
+requestAnimationFrame(animate);
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+})();
+</script>
+</body>
+</html>

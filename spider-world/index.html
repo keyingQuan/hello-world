@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Spider World Game",
+  "schemaVersion": 1,
+  "description": "《蜘蛛大世界》解压打蛛小游戏:60秒限时敲蜘蛛,含抢功、迷惑、健忘、AI翻车等五种角色机制,单文件HTML,可反复游玩。",
+  "mcpTools": [],
+  "mcpServerNames": []
+}
+</script>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>蜘蛛大世界 · 解压打蛛版</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html,body { height:100%; overflow:hidden; }
+  body {
+    font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background: linear-gradient(180deg,#aee3f5 0%,#cdeff0 45%,#bfe6b8 100%);
+    display:flex; align-items:center; justify-content:center;
+    touch-action: manipulation;
+  }
+  #app { width:min(94vw,600px); display:flex; flex-direction:column; gap:10px; position:relative; }
+
+  /* ---------- HUD ---------- */
+  #hud {
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:rgba(255,255,255,.75); border-radius:16px; padding:8px 14px;
+    box-shadow:0 4px 14px rgba(60,90,60,.15); font-weight:700; color:#3c5a3c;
+  }
+  .hudItem { text-align:center; line-height:1.15; }
+  .hudItem small { display:block; font-size:11px; font-weight:600; color:#7a9a7a; }
+  .hudItem b { font-size:20px; }
+  #comboVal.hot { color:#ff6b35; }
+  #timeBarWrap { flex:1; height:12px; background:#e2efe2; border-radius:8px; overflow:hidden; margin:0 6px; }
+  #timeBar { height:100%; width:100%; background:linear-gradient(90deg,#7ec850,#4caf50); border-radius:8px; transition:width .2s linear; }
+
+  /* ---------- Stage ---------- */
+  #stage {
+    position:relative; width:100%; aspect-ratio:6/6.4;
+    background:
+      radial-gradient(circle at 50% 42%, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 55%),
+      linear-gradient(180deg,#dff3e0 0%,#cbe9c6 60%,#b7dfae 100%);
+    border-radius:22px; box-shadow:0 10px 30px rgba(60,90,60,.22), inset 0 0 0 5px rgba(255,255,255,.5);
+    overflow:hidden; cursor:none;
+  }
+  #stage.shake { animation:shake .18s linear; }
+  @keyframes shake { 25%{transform:translate(3px,-2px)} 50%{transform:translate(-3px,2px)} 75%{transform:translate(2px,2px)} }
+  #stage.flashRed::after { content:""; position:absolute; inset:0; background:rgba(255,60,60,.18); pointer-events:none; }
+  #webbg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; opacity:.6; }
+
+  #holes { position:absolute; inset:4% 4% 3% 4%; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:2%; }
+  .hole { position:relative; display:flex; align-items:flex-end; justify-content:center; }
+  .pit { position:absolute; bottom:4%; left:10%; width:80%; height:24%; background:radial-gradient(ellipse at 50% 45%, #4a5d43 0%, #37452f 60%, #2b3625 100%); border-radius:50%; box-shadow:inset 0 5px 9px rgba(0,0,0,.45), 0 2px 0 rgba(255,255,255,.25); }
+  .win { position:absolute; bottom:12%; left:6%; width:88%; height:86%; overflow:hidden; display:flex; align-items:flex-end; justify-content:center; }
+  .spider { width:78%; transform:translateY(105%); transition:transform .22s cubic-bezier(.34,1.5,.64,1); will-change:transform; cursor:none; }
+  .spider.up { transform:translateY(6%); }
+  .spider.down { transform:translateY(105%); transition:transform .18s ease-in; }
+  .spider.bonked svg { animation:bonk .3s ease; }
+  @keyframes bonk { 30%{transform:scaleY(.55) scaleX(1.25)} 100%{transform:scale(1)} }
+  .spider.dazedFx::before {
+    content:"💫"; position:absolute; top:-6%; left:50%; transform:translateX(-50%);
+    font-size:clamp(14px,3.4vmin,22px); animation:spin 1.1s linear infinite; z-index:3;
+  }
+  @keyframes spin { to { transform:translateX(-50%) rotate(360deg); } }
+  .spider { position:relative; }
+
+  .hpRow { position:absolute; top:-2%; left:50%; transform:translateX(-50%); display:flex; gap:3px; z-index:3; }
+  .hpDot { width:9px; height:9px; border-radius:50%; background:#ff5d5d; border:1.5px solid #fff; box-shadow:0 1px 2px rgba(0,0,0,.3); }
+  .hpDot.shield { background:#ffc93c; }
+
+  .stealBar { position:absolute; top:6%; left:12%; width:76%; height:7px; background:rgba(255,255,255,.7); border-radius:5px; overflow:hidden; z-index:3; }
+  .stealBar i { display:block; height:100%; background:#ff4757; border-radius:5px; }
+
+  /* ---------- bubbles & floaters ---------- */
+  .bubble {
+    position:absolute; z-index:20; max-width:46%; background:#fff; border-radius:12px; padding:6px 9px;
+    font-size:clamp(10px,2.5vmin,14px); font-weight:700; color:#444; line-height:1.3;
+    box-shadow:0 3px 10px rgba(0,0,0,.18); transform:translate(-50%,-100%); pointer-events:none;
+    animation:bubblePop .18s ease-out;
+  }
+  .bubble::after { content:""; position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); border:7px solid transparent; border-top-color:#fff; border-bottom:0; }
+  .bubble.ai { background:#1e2a38; color:#7df9ff; font-family:ui-monospace,monospace; }
+  .bubble.ai::after { border-top-color:#1e2a38; }
+  @keyframes bubblePop { from { transform:translate(-50%,-92%) scale(.6); opacity:0; } }
+  .floater {
+    position:absolute; z-index:22; font-weight:900; font-size:clamp(14px,3.6vmin,22px);
+    color:#2e7d32; text-shadow:0 2px 0 #fff; transform:translate(-50%,-50%); pointer-events:none;
+    animation:floatUp 1s ease-out forwards;
+  }
+  .floater.bad { color:#e53935; }
+  .floater.gold { color:#f9a825; }
+  @keyframes floatUp { to { transform:translate(-50%,-160%); opacity:0; } }
+
+  #banner {
+    position:absolute; top:38%; left:50%; transform:translate(-50%,-50%) scale(0); z-index:30;
+    background:linear-gradient(135deg,#ffd54f,#ffb300); color:#6d4c00; font-size:clamp(16px,4.5vmin,26px);
+    font-weight:900; padding:12px 26px; border-radius:16px; box-shadow:0 8px 24px rgba(255,160,0,.5);
+    pointer-events:none; text-align:center;
+  }
+  #banner.show { animation:bannerIn 2s ease forwards; }
+  @keyframes bannerIn { 12%{transform:translate(-50%,-50%) scale(1.1)} 20%{transform:translate(-50%,-50%) scale(1)} 80%{transform:translate(-50%,-50%) scale(1); opacity:1} 100%{transform:translate(-50%,-70%) scale(1); opacity:0} }
+
+  /* ---------- weapons ---------- */
+  #hammer { position:absolute; width:clamp(44px,10vmin,64px); z-index:40; pointer-events:none; transform:translate(-18%,-78%) rotate(18deg); transform-origin:78% 82%; display:none; }
+  #hammer.swing { animation:swing .16s ease-out; }
+  @keyframes swing { 40%{transform:translate(-18%,-78%) rotate(-52deg)} 100%{transform:translate(-18%,-78%) rotate(18deg)} }
+  #javelin { position:absolute; width:clamp(48px,11vmin,70px); z-index:40; pointer-events:none; transform:translate(-12%,-88%); display:none; }
+  #javelin.swing { animation:stab .15s ease-out; }
+  @keyframes stab { 45%{transform:translate(-32%,-64%) scale(1.05)} 100%{transform:translate(-12%,-88%)} }
+  .stuckJav { position:absolute; width:clamp(40px,9vmin,58px); z-index:24; pointer-events:none; transform:translate(-50%,-92%) rotate(14deg); animation:stuck .55s ease-out forwards; }
+  @keyframes stuck {
+    0%{transform:translate(-50%,-110%) rotate(14deg); opacity:1}
+    18%{transform:translate(-50%,-88%) rotate(14deg)}
+    30%{transform:translate(-50%,-90%) rotate(20deg)}
+    42%{transform:translate(-50%,-89%) rotate(10deg)}
+    54%{transform:translate(-50%,-90%) rotate(16deg)}
+    80%{transform:translate(-50%,-90%) rotate(14deg); opacity:1}
+    100%{transform:translate(-50%,-90%) rotate(14deg); opacity:0}
+  }
+  #weaponPick { display:flex; gap:10px; justify-content:center; }
+  .wbtn {
+    font-size:clamp(13px,3.2vmin,17px); font-weight:800; color:#5c7a5c; cursor:pointer;
+    background:#fff; border:3px solid #cfe3cf; padding:8px 18px; border-radius:999px;
+    box-shadow:0 3px 8px rgba(0,0,0,.08); transition:all .12s;
+  }
+  .wbtn.sel { border-color:#ff8a50; color:#ff5722; background:#fff3ec; transform:scale(1.06); }
+
+  /* ---------- overlays ---------- */
+  .overlay {
+    position:absolute; inset:0; z-index:50; background:rgba(240,250,240,.92); backdrop-filter:blur(4px);
+    border-radius:22px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:12px; padding:18px; text-align:center;
+  }
+  .overlay h1 { font-size:clamp(24px,6vmin,38px); color:#3c5a3c; letter-spacing:2px; }
+  .overlay h1 span { color:#ff6b35; }
+  .overlay p { color:#5c7a5c; font-size:clamp(12px,3vmin,15px); line-height:1.55; }
+  .btn {
+    font-size:clamp(16px,4vmin,22px); font-weight:900; color:#fff; border:none; cursor:pointer;
+    background:linear-gradient(135deg,#ff8a50,#ff5722); padding:12px 42px; border-radius:999px;
+    box-shadow:0 6px 0 #d84315, 0 10px 20px rgba(255,87,34,.35); transition:transform .1s;
+  }
+  .btn:active { transform:translateY(4px); box-shadow:0 2px 0 #d84315; }
+  #cast { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; width:100%; }
+  .card { background:#fff; border-radius:12px; padding:6px 4px 4px; width:17.5%; min-width:74px; box-shadow:0 3px 8px rgba(0,0,0,.1); }
+  .card svg { width:74%; display:block; margin:0 auto; }
+  .card b { display:block; font-size:11px; color:#444; }
+  .card small { display:block; font-size:9px; color:#999; transform:scale(.92); }
+  #stats { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+  .stat { background:#fff; border-radius:12px; padding:8px 16px; box-shadow:0 3px 8px rgba(0,0,0,.08); }
+  .stat small { display:block; font-size:11px; color:#8aa88a; font-weight:700; }
+  .stat b { font-size:22px; color:#3c5a3c; }
+  #killRow { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .kill { background:#fff; border-radius:10px; padding:4px 6px; box-shadow:0 2px 6px rgba(0,0,0,.08); font-size:12px; font-weight:700; color:#555; display:flex; align-items:center; gap:3px; }
+  .kill svg { width:26px; }
+  #title2 { font-size:clamp(18px,5vmin,28px); font-weight:900; color:#ff6b35; }
+  .hidden { display:none !important; }
+
+  /* confetti */
+  .conf { position:absolute; z-index:35; width:9px; height:13px; top:-16px; pointer-events:none; animation:confFall linear forwards; }
+  @keyframes confFall { to { transform:translateY(115vmin) rotate(720deg); opacity:.7; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div class="hudItem"><small>得分</small><b id="scoreVal">0</b></div>
+    <div class="hudItem"><small>连击</small><b id="comboVal">x0</b></div>
+    <div id="timeBarWrap"><div id="timeBar"></div></div>
+    <div class="hudItem"><small>剩余</small><b id="timeVal">60</b></div>
+    <div class="hudItem"><small>最高分</small><b id="bestVal">0</b></div>
+  </div>
+
+  <div id="stage">
+    <svg id="webbg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+    <div id="holes"></div>
+    <div id="banner"></div>
+    <svg id="hammer" viewBox="0 0 64 64">
+      <rect x="29" y="18" width="7" height="42" rx="3" fill="#b07b3e" stroke="#7a5122" stroke-width="1.6"/>
+      <rect x="12" y="4" width="40" height="20" rx="8" fill="#ff8a50" stroke="#d84315" stroke-width="2"/>
+      <rect x="16" y="8" width="12" height="5" rx="2.5" fill="#ffd0b5" opacity=".8"/>
+    </svg>
+    <svg id="javelin" viewBox="0 0 64 64">
+      <line x1="50" y1="5" x2="18" y2="47" stroke="#b07b3e" stroke-width="4.6" stroke-linecap="round"/>
+      <line x1="47" y1="9" x2="42" y2="15.5" stroke="#7a5122" stroke-width="6" stroke-linecap="round"/>
+      <path d="M18 47 L7 61 L13.4 43.5 Z" fill="#9aa7b3" stroke="#5c6b78" stroke-width="1.6"/>
+      <path d="M52 3 L58 -2 M54 8 L61 4" stroke="#ff5d5d" stroke-width="2.6" stroke-linecap="round"/>
+    </svg>
+
+    <div id="startScreen" class="overlay">
+      <h1>🕷️ 蜘蛛<span>大世界</span> 🔨</h1>
+      <p>60 秒限时!敲晕从蛛网里探头的蜘蛛们<br>小心<b>女蜘蛛抢功</b>、别敲<b>摸鱼锦鲤</b>、连击有倍率!</p>
+      <div id="cast"></div>
+      <div id="weaponPick">
+        <button class="wbtn sel" data-w="hammer">🔨 小锤子</button>
+        <button class="wbtn" data-w="javelin">🗡 小标枪</button>
+      </div>
+      <button class="btn" id="startBtn">开 敲 !</button>
+    </div>
+
+    <div id="endScreen" class="overlay hidden">
+      <h1>时间到!</h1>
+      <div id="title2"></div>
+      <div id="stats">
+        <div class="stat"><small>总得分</small><b id="endScore">0</b></div>
+        <div class="stat"><small>最高连击</small><b id="endCombo">0</b></div>
+        <div class="stat"><small>敲晕总数</small><b id="endKills">0</b></div>
+      </div>
+      <div id="killRow"></div>
+      <p id="endNote"></p>
+      <button class="btn" id="againBtn">再来一局!</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================= 角色 SVG ================= */
+function legs(color){
+  return `
+  <g stroke="${color}" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M30 62 Q12 52 8 36"/><path d="M28 72 Q10 70 4 56"/><path d="M30 82 Q14 88 10 100"/>
+    <path d="M90 62 Q108 52 112 36"/><path d="M92 72 Q110 70 116 56"/><path d="M90 82 Q106 88 110 100"/>
+  </g>`;
+}
+function eyes(x1,x2,y,r,pr,extra=""){
+  return `
+  <circle cx="${x1}" cy="${y}" r="${r}" fill="#fff"/><circle cx="${x2}" cy="${y}" r="${r}" fill="#fff"/>
+  <circle cx="${x1+1}" cy="${y+1.5}" r="${pr}" fill="#26241f"/><circle cx="${x2+1}" cy="${y+1.5}" r="${pr}" fill="#26241f"/>
+  <circle cx="${x1+3.4}" cy="${y-1.6}" r="1.8" fill="#fff"/><circle cx="${x2+3.4}" cy="${y-1.6}" r="1.8" fill="#fff"/>${extra}`;
+}
+const SVGS = {
+  boss: `<svg viewBox="0 0 120 118">
+    ${legs('#4a3a28')}
+    <ellipse cx="60" cy="66" rx="36" ry="33" fill="#5a4632"/>
+    <ellipse cx="60" cy="66" rx="36" ry="33" fill="none" stroke="#3e2f1f" stroke-width="2.5"/>
+    <path d="M32 74 A32 30 0 0 0 88 74 L84 96 Q60 104 36 96 Z" fill="#7a6a4f"/>
+    <path d="M36 76 L84 76 M40 86 L80 86 M46 74 L44 96 M60 78 L60 99 M74 74 L76 96" stroke="#5d4f38" stroke-width="1.6"/>
+    <path d="M60 78 Q72 84 76 94" stroke="#f4c430" stroke-width="2.4" fill="none"/>
+    <circle cx="77" cy="95" r="4" fill="#f4c430" stroke="#b8860b"/>
+    <path d="M52 76 L60 84 L68 76 L60 80 Z" fill="#8b1e2d"/>
+    ${eyes(46,74,52,9.5,4.5)}
+    <path d="M36 42 L52 46 M84 42 L68 46" stroke="#3e2f1f" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="74" cy="52" r="12.5" fill="none" stroke="#f4c430" stroke-width="2"/>
+    <path d="M84 62 L90 72" stroke="#f4c430" stroke-width="1.6"/>
+    <path d="M52 66 Q60 71 68 66" stroke="#2e2417" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  </svg>`,
+  female: `<svg viewBox="0 0 120 118">
+    ${legs('#9b4dbb')}
+    <g stroke="#e63946" stroke-width="3" stroke-linecap="round"><path d="M31.5 61 L28 58"/><path d="M91 61 L94 58"/></g>
+    <ellipse cx="60" cy="68" rx="33" ry="30" fill="#c77dff"/>
+    <ellipse cx="60" cy="68" rx="33" ry="30" fill="none" stroke="#8d4bb5" stroke-width="2.5"/>
+    <g fill="#6d2387">
+      <circle cx="36" cy="46" r="9"/><circle cx="48" cy="39" r="10"/><circle cx="61" cy="37" r="10"/><circle cx="74" cy="40" r="10"/><circle cx="85" cy="47" r="9"/>
+      <circle cx="30" cy="56" r="7"/><circle cx="91" cy="57" r="7"/>
+    </g>
+    ${eyes(47,74,58,9,4.2)}
+    <g stroke="#3d1650" stroke-width="2" stroke-linecap="round">
+      <path d="M39 51 L35 47"/><path d="M43 49 L41 44"/><path d="M82 51 L86 47"/><path d="M78 49 L80 44"/>
+    </g>
+    <path d="M53 74 Q60 80 67 74" stroke="#c1121f" stroke-width="3.6" fill="none" stroke-linecap="round"/>
+    <circle cx="38" cy="70" r="4.5" fill="#ffb3c6" opacity=".85"/><circle cx="83" cy="70" r="4.5" fill="#ffb3c6" opacity=".85"/>
+    <rect x="82" y="80" width="16" height="13" rx="4" fill="#e63946" stroke="#a4161a" stroke-width="1.6"/>
+    <path d="M85 80 Q90 72 95 80" stroke="#a4161a" stroke-width="2" fill="none"/>
+  </svg>`,
+  lackey: `<svg viewBox="0 0 120 118">
+    <g transform="translate(12,14) scale(.8)">
+    ${legs('#5a9e3a')}
+    <ellipse cx="60" cy="68" rx="33" ry="30" fill="#8fd14f"/>
+    <ellipse cx="60" cy="68" rx="33" ry="30" fill="none" stroke="#5a9e3a" stroke-width="2.5"/>
+    ${eyes(47,74,58,9,4.2)}
+    <circle cx="47" cy="58" r="11" fill="none" stroke="#2f5d1c" stroke-width="2"/>
+    <circle cx="74" cy="58" r="11" fill="none" stroke="#2f5d1c" stroke-width="2"/>
+    <path d="M58 58 L63 58" stroke="#2f5d1c" stroke-width="2"/>
+    <path d="M54 76 Q60 81 66 76" stroke="#2f5d1c" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <rect x="72" y="30" width="22" height="6" rx="3" transform="rotate(38 83 33)" fill="#ffb703" stroke="#c68600" stroke-width="1.4"/>
+    <rect x="38" y="84" width="30" height="22" rx="3" fill="#fff" stroke="#999" stroke-width="1.6"/>
+    <path d="M42 90 H64 M42 95 H64 M42 100 H58" stroke="#bbb" stroke-width="1.6"/>
+    </g>
+  </svg>`,
+  mistress: `<svg viewBox="0 0 120 118">
+    ${legs('#c96f2f')}
+    <ellipse cx="60" cy="68" rx="33" ry="30" fill="#f4a259"/>
+    <ellipse cx="60" cy="68" rx="33" ry="30" fill="none" stroke="#bb6b2e" stroke-width="2.5"/>
+    <path d="M28 56 Q30 34 60 33 Q90 34 92 56 Q88 44 60 44 Q32 44 28 56 Z" fill="#1c1c24"/>
+    <path d="M38 40 Q50 35 62 38" stroke="#4d4d60" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    ${eyes(47,74,60,8.5,4)}
+    <path d="M53 76 Q60 81 67 76" stroke="#8a4b16" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <path d="M84 62 c2.6 -3.4 8 -1.2 8 2.2 c0 2.8 -4.4 5.6 -8 7.4 c-3.6 -1.8 -8 -4.6 -8 -7.4 c0 -3.4 5.4 -5.6 8 -2.2 Z" fill="#ff4d8d"/>
+    <rect x="24" y="82" width="22" height="16" rx="3" fill="#ff8fab" stroke="#d6336c" stroke-width="1.8"/>
+    <path d="M24 90 H46 M35 82 V98" stroke="#d6336c" stroke-width="1.4"/>
+    <path d="M28 82 Q35 74 42 82" stroke="#d6336c" stroke-width="2" fill="none"/>
+  </svg>`,
+  ai: `<svg viewBox="0 0 120 118">
+    ${legs('#8496a8')}
+    <ellipse cx="60" cy="68" rx="33" ry="30" fill="#c9d6e2"/>
+    <ellipse cx="60" cy="68" rx="33" ry="30" fill="none" stroke="#8496a8" stroke-width="2.5"/>
+    <path d="M60 38 L60 22" stroke="#8496a8" stroke-width="3.4"/>
+    <circle cx="60" cy="18" r="5.5" fill="#ff5d5d"><animate attributeName="opacity" values="1;.25;1" dur="1s" repeatCount="indefinite"/></circle>
+    <rect x="40" y="52" width="14" height="12" rx="2" fill="#20303f"/><rect x="66" y="52" width="14" height="12" rx="2" fill="#20303f"/>
+    <rect x="43" y="55" width="5" height="5" fill="#7df9ff"/><rect x="69" y="55" width="5" height="5" fill="#7df9ff"/>
+    <g fill="#8496a8"><rect x="50" y="74" width="4.5" height="3.6" rx="1"/><rect x="57" y="74" width="4.5" height="3.6" rx="1"/><rect x="64" y="74" width="4.5" height="3.6" rx="1"/></g>
+    <rect x="47" y="84" width="26" height="12" rx="3" fill="#20303f"/>
+    <text x="60" y="93.5" text-anchor="middle" font-size="9" font-weight="bold" fill="#7df9ff" font-family="monospace">AI</text>
+  </svg>`,
+  koi: `<svg viewBox="0 0 120 118">
+    <g transform="translate(0,8)">
+    <path d="M22 66 Q38 38 68 40 Q96 42 100 62 Q96 82 68 84 Q38 86 22 66 Z" fill="#ff9f43"/>
+    <path d="M22 66 Q10 52 6 44 Q20 50 26 58 Z M22 66 Q10 80 6 88 Q20 82 26 74 Z" fill="#ff9f43" stroke="#e07b1f" stroke-width="1.6"/>
+    <path d="M22 66 Q38 38 68 40 Q96 42 100 62 Q96 82 68 84 Q38 86 22 66 Z" fill="none" stroke="#e07b1f" stroke-width="2.4"/>
+    <circle cx="52" cy="56" r="8" fill="#fff"/><circle cx="70" cy="70" r="7" fill="#fff"/>
+    <circle cx="84" cy="58" r="7.5" fill="#fff"/><circle cx="85" cy="57" r="3.6" fill="#26241f"/>
+    <circle cx="86.3" cy="55.6" r="1.3" fill="#fff"/>
+    <path d="M96 66 Q99 68 96 70" stroke="#c1121f" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M56 40 Q60 28 66 40" fill="#ffb26b" stroke="#e07b1f" stroke-width="1.6"/>
+    </g>
+  </svg>`
+};
+
+/* ================= 台词库 ================= */
+const LINES = {
+  bossIn:   ["小X啊,还是你最靠谱!","这个方案……重做!","我看人一向很准。","格局,要有格局!"],
+  bossHit:  ["哎哟我的怀表!","有话好好说!","注意影响!"],
+  bossKO:   ["难道……我看走眼了?","马甲……皱了……","散会,散会……"],
+  femaleIn: ["Boss~这个我来我来!","这活儿谁都别抢!","人家超能干的啦~"],
+  femaleSteal:["这是我带的项目!","功劳收下了哦~","汇报里写我名字!"],
+  femaleKO: ["功劳……怎么飞走了……","我的美甲!","Boss救我!"],
+  femaleBack:["把功劳还回来!!"],
+  lackeyIn: ["剧本:本项目自立项起便由X姐亲自操盘…","台本:X姐运筹帷幄,力挽狂澜…","设定:没有X姐就没有这个项目…"],
+  lackeyKO: ["大纲还没写完呢!","我只是个写手啊!"],
+  mistIn:   ["X姐!中午吃什么?","X姐我给你带了饭!","别人叫我?没听见。"],
+  mistKO:   ["这顿饭记我账上……我说过吗?","咦?我刚才说什么来着?","疼!……疼什么来着?"],
+  aiIn:     ["已为您预订会议室:火星3号厅","周报总结:本周共上班8天","尊敬的客户,祝您[此处插入节日]快乐","会议纪要:与会人员共-3人","翻译完成:Hello=你好吗白菜","日程提醒:昨天下午3点开会"],
+  aiKO:     ["让我问问AI我为什么被打……","错误代码:404 挨打原因未找到","正在重新生成……"],
+  koiHit:   ["它是自己人!!别敲锦鲤!"]
+};
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+/* ================= 音效 ================= */
+let AC=null;
+function ac(){ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); return AC; }
+function tone(f1,f2,dur,type='sine',vol=.16,when=0){
+  try{
+    const a=ac(),t=a.currentTime+when,o=a.createOscillator(),g=a.createGain();
+    o.type=type;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(Math.max(f2,1),t+dur);
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+.02);
+  }catch(e){}
+}
+const sfx={
+  bonk(){ tone(300,90,.12,'square',.14); tone(700,200,.06,'triangle',.1); },
+  pop(){ tone(500,900,.08,'sine',.06); },
+  bad(){ tone(180,70,.35,'sawtooth',.14); },
+  steal(){ tone(880,880,.07,'square',.1); tone(660,660,.07,'square',.1,.09); },
+  reclaim(){ [660,880,1100].forEach((f,i)=>tone(f,f,.09,'triangle',.12,i*.07)); },
+  comboUp(){ [523,659,784,1046].forEach((f,i)=>tone(f,f,.1,'triangle',.11,i*.06)); },
+  ai(){ tone(1200,1600,.05,'square',.07); tone(1600,1200,.05,'square',.07,.06); },
+  stab(){ tone(950,260,.09,'sawtooth',.08); tone(240,90,.1,'square',.13,.05); },
+  fanfare(){ [523,659,784,1046,1318].forEach((f,i)=>tone(f,f,.16,'triangle',.13,i*.09)); },
+  end(){ [784,659,523,659,784,1046].forEach((f,i)=>tone(f,f,.14,'sine',.12,i*.11)); }
+};
+
+/* ================= DOM & 全局状态 ================= */
+const $=id=>document.getElementById(id);
+const stage=$('stage'),holesEl=$('holes'),hammer=$('hammer'),javelin=$('javelin');
+const N=9, holes=[];
+let S=null, best=0, rafId=null, weapon='hammer';
+function weaponEl(){ return weapon==='javelin'?javelin:hammer; }
+document.querySelectorAll('.wbtn').forEach(b=>b.addEventListener('click',()=>{
+  weapon=b.dataset.w;
+  document.querySelectorAll('.wbtn').forEach(x=>x.classList.toggle('sel',x===b));
+  hammer.style.display='none';javelin.style.display='none';
+  tone(600,900,.08,'triangle',.1);
+}));
+
+/* 蛛网背景 */
+(function(){
+  let s='',cx=50,cy=46;
+  for(let i=0;i<12;i++){const a=i*Math.PI/6;s+=`<line x1="${cx}" y1="${cy}" x2="${cx+70*Math.cos(a)}" y2="${cy+70*Math.sin(a)}" stroke="#fff" stroke-width=".7"/>`;}
+  for(let r=8;r<=64;r+=8){let p='';for(let i=0;i<=12;i++){const a=i*Math.PI/6,sag=1.06;p+=(i?'L':'M')+(cx+r*Math.cos(a))+' '+(cy+r*sag*Math.sin(a))+' ';}s+=`<path d="${p}Z" fill="none" stroke="#fff" stroke-width=".7"/>`;}
+  s+=`<circle cx="18" cy="20" r="1.4" fill="#fff" opacity=".9"/><circle cx="82" cy="14" r="1.1" fill="#fff" opacity=".9"/><circle cx="90" cy="72" r="1.3" fill="#fff" opacity=".9"/>`;
+  $('webbg').innerHTML=s;
+})();
+
+/* 洞口 */
+for(let i=0;i<N;i++){
+  const h=document.createElement('div');h.className='hole';
+  h.innerHTML='<div class="pit"></div><div class="win"></div>';
+  holesEl.appendChild(h);
+  holes.push({el:h,win:h.querySelector('.win'),spider:null});
+}
+
+/* 角色卡 */
+(function(){
+  const cast=[['boss','男蜘蛛','大Boss·老钱风·识人不清'],['female','女蜘蛛','抢功高手·会偷你分'],['lackey','跟班蜘蛛','随身编剧·紧跟女蛛'],['mistress','小三蜘蛛','健忘·反复刷分'],['ai','AI蜘蛛','从不检查AI·80分'],['koi','摸鱼锦鲤','自己人!敲了扣分']];
+  $('cast').innerHTML=cast.map(c=>`<div class="card">${SVGS[c[0]]}<b>${c[1]}</b><small>${c[2]}</small></div>`).join('');
+})();
+
+/* ================= 工具 ================= */
+function freeHoles(exclude=-1){ const r=[];for(let i=0;i<N;i++)if(!holes[i].spider&&i!==exclude)r.push(i);return r; }
+function holeCenter(i){
+  const hr=holes[i].el.getBoundingClientRect(),sr=stage.getBoundingClientRect();
+  return {x:hr.left-sr.left+hr.width/2,y:hr.top-sr.top+hr.height*0.18};
+}
+function bubble(holeIdx,text,cls='',ms=1500){
+  const c=holeCenter(holeIdx),b=document.createElement('div');
+  b.className='bubble '+cls;b.textContent=text;
+  b.style.left=Math.min(Math.max(c.x, stage.clientWidth*.16), stage.clientWidth*.84)+'px';
+  b.style.top=Math.max(c.y,34)+'px';
+  stage.appendChild(b);setTimeout(()=>b.remove(),ms);
+}
+function floater(x,y,text,cls=''){
+  const f=document.createElement('div');f.className='floater '+cls;f.textContent=text;
+  f.style.left=x+'px';f.style.top=y+'px';stage.appendChild(f);setTimeout(()=>f.remove(),1000);
+}
+function banner(text){ const b=$('banner');b.textContent=text;b.classList.remove('show');void b.offsetWidth;b.classList.add('show'); }
+function confetti(n=60){
+  const colors=['#ff6b6b','#feca57','#48dbfb','#1dd1a1','#f368e0','#ff9f43'];
+  for(let i=0;i<n;i++){const c=document.createElement('div');c.className='conf';
+    c.style.left=Math.random()*100+'%';c.style.background=pick(colors);
+    c.style.animationDuration=(1.4+Math.random()*1.4)+'s';c.style.animationDelay=(Math.random()*.5)+'s';
+    c.style.transform=`rotate(${Math.random()*360}deg)`;stage.appendChild(c);setTimeout(()=>c.remove(),3400);}
+}
+function shake(){ stage.classList.remove('shake');void stage.offsetWidth;stage.classList.add('shake'); }
+
+/* ================= 游戏状态 ================= */
+function newState(){
+  return {
+    running:false, score:0, combo:0, maxCombo:0,
+    t0:0, dur:60000, now:0,
+    nextSpawn:0, nextWork:6000,
+    kills:{boss:0,female:0,lackey:0,mistress:0,ai:0},
+    totalKills:0, mistressStreak:0, femaleShieldStock:0,
+    femaleKOAt:-9e9, allBonus:false,
+    pending:[]  // {at,fn}
+  };
+}
+function multiplier(){ return S.combo>=12?3:S.combo>=6?2:1; }
+function updateHUD(){
+  $('scoreVal').textContent=S.score;
+  const m=multiplier();
+  $('comboVal').textContent='x'+S.combo+(m>1?'·'+m+'倍':'');
+  $('comboVal').classList.toggle('hot',m>1);
+  $('bestVal').textContent=best;
+}
+function addScore(v,x,y){
+  const m=multiplier(),total=Math.round(v*m);
+  S.score+=total; if(S.score<0)S.score=0;
+  floater(x,y,'+'+total+(m>1?' (x'+m+')':''),m>1?'gold':'');
+  updateHUD();
+}
+function loseScore(v,holeIdx,label){
+  S.score=Math.max(0,S.score-v);
+  const c=holeCenter(holeIdx);floater(c.x,c.y+30,'-'+v+' '+label,'bad');
+  updateHUD();
+}
+function comboHit(){
+  const before=multiplier();S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo);
+  if(multiplier()>before){sfx.comboUp();banner('🔥 连击 x'+S.combo+'!得分 '+multiplier()+' 倍!');}
+  updateHUD();
+}
+function comboBreak(){ if(S.combo>0){S.combo=0;updateHUD();} }
+function femaleActive(){ return holes.some(h=>h.spider&&h.spider.type==='female'); }
+
+/* ================= 蜘蛛生成 ================= */
+function spawn(type,holeIdx,opt={}){
+  if(holes[holeIdx].spider)return null;
+  const sp={type,hole:holeIdx,hp:1,opt,bornAt:S.now,leaveAt:S.now+2200,el:null,alive:true};
+  const progress=Math.min(1,(S.now-S.t0)/S.dur);         // 难度进度
+  const stayBase=2400-1100*progress;
+
+  if(type==='boss'){ sp.hp=3; sp.leaveAt=S.now+stayBase+900; sp.score=50; }
+  if(type==='female'){
+    if(opt.steal){ sp.hp=1; sp.leaveAt=S.now+1500; sp.score=40; }
+    else{ sp.hp=1+S.femaleShieldStock; sp.leaveAt=S.now+stayBase-300; sp.score=40;
+      // 跟班 1 秒后跟上
+      S.pending.push({at:S.now+900,fn:()=>{const f=freeHoles();if(f.length&&S.running){spawn('lackey',pick(f));}}});
+    }
+  }
+  if(type==='lackey'){ sp.leaveAt=S.now+stayBase; sp.score=15; }
+  if(type==='mistress'){ sp.leaveAt=S.now+stayBase-200; sp.score=Math.min(85,35+10*S.mistressStreak); }
+  if(type==='ai'){
+    sp.leaveAt=S.now+stayBase+200; sp.score=80;
+    if(Math.random()<.4) sp.teleAt=S.now+900+Math.random()*400;
+  }
+  if(type==='koi'){ sp.leaveAt=S.now+stayBase-400; }
+  if(type==='work'){ sp.leaveAt=S.now+2200; }
+
+  const el=document.createElement('div');el.className='spider';
+  el.innerHTML= type==='work'
+    ? `<svg viewBox="0 0 120 118"><g transform="translate(14,20)"><rect x="8" y="26" width="76" height="52" rx="8" fill="#8d6e63" stroke="#5d4037" stroke-width="3"/><rect x="34" y="14" width="24" height="14" rx="5" fill="none" stroke="#5d4037" stroke-width="4"/><rect x="8" y="44" width="76" height="9" fill="#5d4037"/><rect x="38" y="42" width="16" height="13" rx="3" fill="#ffca28" stroke="#5d4037" stroke-width="2"/><text x="46" y="72" text-anchor="middle" font-size="15" font-weight="bold" fill="#ffe0b2">活儿</text></g></svg>`
+    : SVGS[type];
+  sp.el=el;el.dataset.hole=holeIdx;
+  holes[holeIdx].win.appendChild(el);
+  holes[holeIdx].spider=sp;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('up')));
+  sfx.pop();
+
+  // HP 点
+  if(sp.hp>1||type==='female'&&!opt.steal&&S.femaleShieldStock>0){
+    const row=document.createElement('div');row.className='hpRow';
+    for(let i=0;i<sp.hp;i++){const d=document.createElement('i');d.className='hpDot'+((type==='female'&&i>=1)?' shield':'');row.appendChild(d);}
+    el.appendChild(row);sp.hpRow=row;
+  }
+  // 抢功倒计时条
+  if(opt.steal){
+    const bar=document.createElement('div');bar.className='stealBar';bar.innerHTML='<i></i>';
+    el.appendChild(bar);sp.stealBarFill=bar.firstChild;
+    sfx.steal();bubble(holeIdx,pick(LINES.femaleSteal));
+  }else{
+    const inLines={boss:LINES.bossIn,female:LINES.femaleIn,lackey:LINES.lackeyIn,mistress:LINES.mistIn,ai:LINES.aiIn}[type];
+    if(inLines){
+      const cls=type==='ai'?'ai':'';
+      bubble(holeIdx,pick(inLines),cls,type==='lackey'||type==='ai'?2100:1500);
+      if(type==='ai')sfx.ai();
+    }
+  }
+  if(type==='female'&&!opt.steal&&S.femaleShieldStock>0){bubble(holeIdx,'又揽了个活,皮更厚了~',``,1600);S.femaleShieldStock=0;}
+  return sp;
+}
+function retreat(sp,instant=false){
+  if(!sp||!sp.alive)return;sp.alive=false;
+  holes[sp.hole].spider=null;
+  sp.el.classList.remove('up');sp.el.classList.add('down');
+  setTimeout(()=>sp.el.remove(),instant?0:220);
+}
+
+/* 选择要生成的类型 */
+function chooseType(){
+  const w=[['boss',16],['female',20],['mistress',16],['ai',16],['lackey',6],['koi',13]];
+  let sum=w.reduce((a,b)=>a+b[1],0),r=Math.random()*sum;
+  for(const[t,v]of w){ if((r-=v)<0)return t; }
+  return 'mistress';
+}
+
+/* ================= 敲击 ================= */
+function whack(sp,px,py){
+  if(!sp.alive||!S.running)return;
+  const type=sp.type;
+  if(weapon==='javelin'){
+    sfx.stab();
+    const j=document.createElement('div');j.className='stuckJav';
+    j.innerHTML=javelin.outerHTML.replace('id="javelin"','');
+    j.firstElementChild.style.width='100%';j.firstElementChild.style.display='block';
+    j.style.left=px+'px';j.style.top=py+'px';
+    stage.appendChild(j);setTimeout(()=>j.remove(),600);
+  }else sfx.bonk();
+  shake();
+  sp.el.classList.remove('bonked');void sp.el.offsetWidth;sp.el.classList.add('bonked');
+
+  if(type==='koi'){
+    sfx.bad();comboBreak();
+    loseScore(30,sp.hole,'');bubble(sp.hole,pick(LINES.koiHit),'',1600);
+    stage.classList.add('flashRed');setTimeout(()=>stage.classList.remove('flashRed'),300);
+    retreat(sp);return;
+  }
+  if(type==='work'){
+    comboHit();addScore(15,px,py);bubble(sp.hole,'活儿被你干了,踏实!','',1300);
+    retreat(sp);return;
+  }
+
+  // 伤害计算(男蛛被女蛛迷惑时双倍)
+  let dmg=1;
+  if(type==='boss'&&femaleActive())dmg=2;
+  sp.hp-=dmg;
+  if(sp.hpRow){ for(let i=0;i<dmg;i++){ const d=sp.hpRow.lastChild; if(d)d.remove(); } }
+
+  if(sp.hp>0){
+    comboHit();
+    const hitLines={boss:LINES.bossHit}[type];
+    if(hitLines&&Math.random()<.7)bubble(sp.hole,pick(hitLines),'',1100);
+    floater(px,py,dmg>1?'暴击 -2!':'-1','gold');
+    return;
+  }
+
+  /* ---- 击倒 ---- */
+  comboHit();
+  S.kills[type]++;S.totalKills++;
+  let pts=sp.score;
+
+  if(type==='female'){
+    S.femaleKOAt=S.now;
+    if(sp.opt.steal){ pts=40; sfx.reclaim(); bubble(sp.hole,'功劳抢回来了!','',1400);}
+    else bubble(sp.hole,pick(LINES.femaleKO),'',1500);
+  }
+  else if(type==='lackey'){
+    if(S.now-S.femaleKOAt<2000){ pts+=30; banner('📝 剧本作废!+30'); }
+    bubble(sp.hole,pick(LINES.lackeyKO),'',1400);
+  }
+  else if(type==='mistress'){
+    S.mistressStreak++;
+    bubble(sp.hole,pick(LINES.mistKO),'',1600);
+    // 健忘:很快又回来
+    if(Math.random()<.65)S.pending.push({at:S.now+2200+Math.random()*1800,fn:()=>{const f=freeHoles();if(f.length&&S.running)spawn('mistress',pick(f));}});
+  }
+  else if(type==='boss'){ bubble(sp.hole,pick(LINES.bossKO),'',1600); }
+  else if(type==='ai'){ bubble(sp.hole,pick(LINES.aiKO),'ai',1600); sfx.ai(); }
+
+  addScore(pts,px,py);
+  const koHole=sp.hole;
+  retreat(sp);
+
+  // 全员管理成就
+  if(!S.allBonus&&Object.values(S.kills).every(v=>v>0)){
+    S.allBonus=true;S.score+=200;updateHUD();
+    banner('🏆 全员管理!全部蜘蛛被敲晕过 +200');sfx.fanfare();confetti(80);
+  }
+  // 女蜘蛛抢功
+  if(type!=='female'&&!sp.opt.steal&&Math.random()<.34&&!femaleActive()){
+    const f=freeHoles(koHole);
+    if(f.length){
+      const amount=Math.round(pts*multiplier());
+      S.pending.push({at:S.now+250,fn:()=>{ if(!S.running||femaleActive())return;
+        const f2=freeHoles();if(!f2.length)return;
+        spawn('female',pick(f2),{steal:true,amount}); }});
+    }
+  }
+}
+
+/* ================= 输入 ================= */
+function stagePos(e){ const r=stage.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+stage.addEventListener('pointermove',e=>{
+  const p=stagePos(e),w=weaponEl();w.style.display='block';
+  w.style.left=p.x+'px';w.style.top=p.y+'px';
+});
+stage.addEventListener('pointerleave',()=>{hammer.style.display='none';javelin.style.display='none';});
+stage.addEventListener('pointerdown',e=>{
+  const p=stagePos(e),w=weaponEl();
+  w.style.display='block';w.style.left=p.x+'px';w.style.top=p.y+'px';
+  w.classList.remove('swing');void w.offsetWidth;w.classList.add('swing');
+  if(!S||!S.running)return;
+  const spEl=e.target.closest?e.target.closest('.spider'):null;
+  if(spEl){ const sp=holes[+spEl.dataset.hole].spider; if(sp&&sp.el===spEl){whack(sp,p.x,p.y);return;} }
+  comboBreak(); // 敲空
+});
+
+/* ================= 主循环 ================= */
+function loop(ts){
+  if(!S.running)return;
+  S.now=performance.now();
+  const elapsed=S.now-S.t0, left=Math.max(0,S.dur-elapsed);
+  $('timeVal').textContent=Math.ceil(left/1000);
+  $('timeBar').style.width=(left/S.dur*100)+'%';
+  $('timeBar').style.background=left<10000?'linear-gradient(90deg,#ff8a50,#e53935)':'';
+
+  // pending 任务
+  for(let i=S.pending.length-1;i>=0;i--){ if(S.now>=S.pending[i].at){const f=S.pending[i].fn;S.pending.splice(i,1);f();} }
+
+  // 生成
+  if(S.now>=S.nextSpawn){
+    const progress=Math.min(1,elapsed/S.dur);
+    const interval=1250-650*progress;
+    const maxOn=2+Math.floor(progress*3);
+    const active=holes.filter(h=>h.spider).length;
+    if(active<maxOn){ const f=freeHoles(); if(f.length)spawn(chooseType(),pick(f)); }
+    S.nextSpawn=S.now+interval*(0.75+Math.random()*.5);
+  }
+  // 「活儿」道具
+  if(S.now>=S.nextWork){
+    const f=freeHoles();
+    if(f.length&&!holes.some(h=>h.spider&&h.spider.type==='work'))spawn('work',pick(f));
+    S.nextWork=S.now+8000+Math.random()*6000;
+  }
+
+  // 各蜘蛛状态
+  for(const h of holes){
+    const sp=h.spider;if(!sp)continue;
+    // AI 量子闪现
+    if(sp.type==='ai'&&sp.teleAt&&S.now>=sp.teleAt){
+      sp.teleAt=0;const f=freeHoles(sp.hole);
+      if(f.length){ const remain=sp.leaveAt-S.now;retreat(sp,true);
+        const ns=spawn('ai',pick(f));if(ns){ns.teleAt=0;ns.leaveAt=S.now+Math.max(900,remain);bubble(ns.hole,'量子闪现!','ai',900);} continue; }
+    }
+    // 抢功倒计时
+    if(sp.opt&&sp.opt.steal){
+      const r=(sp.leaveAt-S.now)/1500;
+      if(sp.stealBarFill)sp.stealBarFill.style.width=Math.max(0,r*100)+'%';
+      if(S.now>=sp.leaveAt){
+        const lost=Math.floor((sp.opt.amount||40)/2);
+        loseScore(lost,sp.hole,'被抢功!');sfx.bad();
+        bubble(sp.hole,'嘻嘻,功劳到手~','',1400);
+        retreat(sp);continue;
+      }
+    } else if(S.now>=sp.leaveAt){ retreat(sp); continue; }
+    // 男蛛迷惑特效
+    if(sp.type==='boss')sp.el.classList.toggle('dazedFx',femaleActive());
+  }
+
+  if(left<=0){ endGame(); return; }
+  rafId=requestAnimationFrame(loop);
+}
+
+/* ================= 开始 / 结束 ================= */
+function startGame(){
+  ac();
+  holes.forEach(h=>{ if(h.spider)retreat(h.spider,true); h.win.innerHTML=''; h.spider=null; });
+  S=newState();
+  S.running=true;S.t0=performance.now();S.now=S.t0;S.nextSpawn=S.t0+500;S.nextWork=S.t0+7000;
+  updateHUD();
+  $('startScreen').classList.add('hidden');$('endScreen').classList.add('hidden');
+  cancelAnimationFrame(rafId);rafId=requestAnimationFrame(loop);
+}
+function endGame(){
+  S.running=false;cancelAnimationFrame(rafId);
+  holes.forEach(h=>{ if(h.spider)retreat(h.spider); });
+  sfx.end();
+  best=Math.max(best,S.score);
+  const t=S.score>=1500?'👑 蛛网世界之王':S.score>=800?'🔨 解压大师':S.score>=300?'💼 职场清道夫':'🐣 见习捕蛛人';
+  $('title2').textContent=t;
+  $('endScore').textContent=S.score;$('endCombo').textContent=S.maxCombo;$('endKills').textContent=S.totalKills;
+  const names={boss:'男蜘蛛',female:'女蜘蛛',lackey:'跟班蛛',mistress:'小三蛛',ai:'AI蛛'};
+  $('killRow').innerHTML=Object.keys(names).map(k=>`<div class="kill">${SVGS[k]}${names[k]} ×${S.kills[k]}</div>`).join('');
+  $('endNote').textContent=S.allBonus?'达成成就:全员管理(+200)!今天也是元气满满的一天~':'提示:五种蜘蛛都敲晕过一次,可触发「全员管理」+200!';
+  $('endScreen').classList.remove('hidden');
+  updateHUD();
+  if(S.score>=800)confetti(70);
+}
+$('startBtn').addEventListener('click',startGame);
+$('againBtn').addEventListener('click',startGame);
+</script>
+</body>
+</html>
