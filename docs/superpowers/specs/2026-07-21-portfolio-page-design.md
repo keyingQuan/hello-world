@@ -10,17 +10,17 @@
 
 **做**：
 - 新建 `index.html` 作为 GitHub Pages 默认首页（https://keyingquan.github.io/hello-world/）
-- 将本地 4 份 markdown 文档转为同风格 HTML 子页面，置于 `works/`：
-  1. 拉片报告：Step Aside / A+ Heiress（`/Users/apple/claude/作品集/拉片报告-StepAside-AplusHeiress.md`）→ `works/lapian-stepaside.html` ｜证明：内容拆解与方法论输出能力
-  2. 案例一页：AI 质检工作流（`案例一页-AI质检工作流.md`）→ `works/ai-qc-workflow.html` ｜证明：AI 工作流设计与落地能力
-  3. 方法论一页：内容质量标准（`方法论一页-内容质量标准.md`）→ `works/content-quality.html` ｜证明：内容质量体系化能力
-  4. 剧本样张 · 写作模板（`剧本样张-写作模板.md`）→ `works/script-template.html` ｜证明：剧本创作规范能力
+- 将本地 2 份**已完成**的 markdown 文档转为同风格 HTML 子页面，置于 `works/`：
+  1. 案例一页：AI 质检工作流（`/Users/apple/claude/作品集/案例一页-AI质检工作流.md`）→ `works/ai-qc-workflow.html` ｜证明：AI 工作流设计与落地能力
+  2. 方法论一页：内容质量标准（`方法论一页-内容质量标准.md`）→ `works/content-quality.html` ｜证明：内容质量体系化能力
+
+  （2026-07-21 范围变更，用户确认：拉片报告为空模板、剧本样张未精修且含面试底牌，暂不公开；待用户完成内容后再追加，首页结构为此预留扩展）
 - 首页收录已有互动 Demo：hand-particles.html、spider-world/（定位"AI 协作动手能力佐证"）
 - 新增共享样式 `assets/portfolio.css`
 - 更新 README 指向新首页
 
 **不做**：
-- 不公开：面试作战卡×2、业绩数据登记表、剧本初稿
+- 不公开：面试作战卡×2、业绩数据登记表、剧本初稿、拉片报告（空模板）、剧本样张模板（内部脚手架）
 - 不改动已有 hand-particles.html、spider-world/ 及 assets 内既有文件
 - 无 JS、无构建工具、无外部 CDN 依赖
 
@@ -28,7 +28,7 @@
 
 **首页** index.html，从上到下：
 1. 头部：权可莹 · AI 短剧生产策略与平台运营 · quankeying540@gmail.com · GitHub 链接
-2. 专业作品区：4 张卡片（标题 + 一句能力证明），链向 works/ 子页
+2. 专业作品区：2 张卡片（标题 + 一句能力证明），链向 works/ 子页；卡片为组件化写法，后续追加作品只需复制一段
 3. 互动 Demo 区：2 张卡片
 4. 页脚：更新日期 + 邮箱
 
@@ -49,4 +49,4 @@
 1. 首页 3 分钟传达定位与证据链
 2. 线上实测所有链接可点（浏览器逐页验证，桌面 + 手机宽度）
 3. 手机宽度无横向滚动
-4. 4 份子页面排版统一、无敏感信息
+4. 2 份子页面排版统一、无敏感信息
