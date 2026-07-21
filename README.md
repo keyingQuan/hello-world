@@ -1,8 +1,15 @@
 # Keying's Lab 🎨
 
+**👉 作品集首页：https://keyingquan.github.io/hello-world/**（AI短剧生产策略与平台运营 · 专业作品 + 互动 Demo）
+
 权可莹的个人作品集 —— 用 AI 协作开发的方式，把想法快速做成能玩的东西。
 
 > 我的主业是 AI 短剧内容策略（成片质检工作流 / 爆款拆解 / 内容 SOP），这里放的是我用 AI 编程工具（Claude 等）从 0 到 1 落地的交互作品。想法、产品定义、迭代验收是我的；代码是我指挥 AI 写的——这正是我理解的 AI 时代内容人的工作方式。
+
+## 专业作品
+
+- [AI 短剧成片自动化质检工作流（脱敏版）](https://keyingquan.github.io/hello-world/works/ai-qc-workflow.html)
+- [短剧内容质量判断标准 · 方法论一页](https://keyingquan.github.io/hello-world/works/content-quality.html)
 
 ## 在线体验（GitHub Pages）
 
