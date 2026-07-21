@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 短剧成片自动化质检工作流 | 权可莹</title>
+<link rel="stylesheet" href="../assets/portfolio.css">
+</head>
+<body>
+<div class="page">
+  <a class="back-link" href="../index.html">← 返回作品集</a>
+  <article class="work-body">
+    <h1>案例：AI 短剧成片自动化质检工作流（脱敏版）</h1>
+    <blockquote>权可莹 · 网眼科技（WebEye）发行部 · 2026.06 至今 · 项目负责人（从 0 到 1）</blockquote>
+
+    <h2>问题</h2>
+    <ul>
+      <li>AIGC 短剧交付前需人工逐集审查（单部 50–70 集），效率低、易漏检</li>
+      <li>多个交付方审核标准不统一，同一问题在不同项目里判法不同</li>
+      <li>画面规格、亮度/响度异常等问题人工肉眼难以稳定检出</li>
+    </ul>
+
+    <h2>方案</h2>
+    <p><strong>端到端自动化质检工作流</strong>（基于多模态大模型，AI 协作开发）：</p>
+    <ol>
+      <li><strong>单次联合判定</strong>：模型直接消费视频画面与音轨，一次输出画面、字幕、合规等 8 大类目判定 + 问题清单，自动回填质检报表</li>
+      <li><strong>分层规则引擎</strong>：业务线基线 + 各交付方差异化加权（一票否决 / 高频抓点 / 专属补充项），新增交付方只需增改规则文件，系统零改动</li>
+      <li><strong>误报治理</strong>：制定 AIGC 内容审查边界声明，屏蔽 AI 生成内容固有特征（手部细节、AI 质感等）造成的误报</li>
+      <li><strong>工程稳定性</strong>：多 key 并发 + 异常退避机制，保障批量剧集稳定处理</li>
+    </ol>
+
+    <h2>结果</h2>
+    <ul>
+      <li><strong>3 周</strong>从 0 到 1 上线，投入常态化使用，承接交付线全量剧目质检</li>
+      <li>单 Agent 联合输出替代 8 类目并行调用，<strong>token 成本降低约 87%</strong></li>
+      <li>可稳定检出人工难以察觉的规格/亮度/响度问题，落地「机器全量兜底 + 人工聚焦复核」审查模式</li>
+    </ul>
+
+    <h2>我在其中的角色</h2>
+    <p>需求定义、审查标准设计、规则体系搭建、prompt 工程与效果验收全程主导；代码实现采用 AI 协作开发（Claude）。</p>
+
+    <blockquote>注：文中已隐去客户名称与内部业务线代号；架构与数据为真实项目结果。</blockquote>
+  </article>
+</div>
+</body>
+</html>
