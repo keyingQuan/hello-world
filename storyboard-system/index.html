@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 短剧分镜生产体系 · 方法论展示 | 权可莹</title>
+<style>
+  :root {
+    --bg: #0d0d10; --card: #16161c; --line: #26262f;
+    --text: #e8e8ec; --dim: #9a9aa5; --accent: #d4a574; --accent2: #7aa2c9;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
+    line-height: 1.7; padding: 0 20px 80px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  header { padding: 70px 0 50px; border-bottom: 1px solid var(--line); }
+  h1 { font-size: 30px; letter-spacing: 1px; margin-bottom: 14px; font-weight: 600; }
+  .sub { color: var(--dim); font-size: 15px; max-width: 640px; }
+  .tag { display: inline-block; background: rgba(212,165,116,.12); color: var(--accent);
+         padding: 3px 10px; border-radius: 3px; font-size: 12px; margin: 12px 8px 0 0; }
+  h2 { font-size: 20px; margin: 54px 0 8px; padding-left: 12px; border-left: 3px solid var(--accent); }
+  .lead { color: var(--dim); font-size: 14px; margin-bottom: 22px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 30px 0; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 20px 18px; }
+  .stat .n { font-size: 30px; font-weight: 600; color: var(--accent); line-height: 1.2; }
+  .stat .l { font-size: 13px; color: var(--dim); margin-top: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0 8px; }
+  th { background: #1c1c24; color: var(--accent2); text-align: left; padding: 10px 12px;
+       font-weight: 500; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--line); color: #cfcfd6; vertical-align: top; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 22px; margin: 16px 0; }
+  .card h3 { font-size: 16px; margin-bottom: 10px; color: var(--accent); font-weight: 600; }
+  .rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .rule { background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--accent2);
+          border-radius: 6px; padding: 16px 18px; }
+  .rule b { display: block; margin-bottom: 5px; font-size: 14px; }
+  .rule span { font-size: 13px; color: var(--dim); }
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 20px 0; font-size: 13px; }
+  .flow i { background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+            padding: 7px 15px; font-style: normal; }
+  .flow em { color: var(--accent); font-style: normal; }
+  ul { padding-left: 20px; color: #cfcfd6; font-size: 14px; }
+  li { margin-bottom: 6px; }
+  .note { font-size: 12.5px; color: var(--dim); background: rgba(122,162,201,.07);
+          border-left: 3px solid var(--accent2); padding: 14px 16px; border-radius: 4px; margin: 22px 0; }
+  footer { margin-top: 70px; padding-top: 26px; border-top: 1px solid var(--line);
+           color: var(--dim); font-size: 13px; }
+  footer a { color: var(--accent2); text-decoration: none; }
+  @media (max-width: 640px) { h1 { font-size: 24px; } .stat .n { font-size: 25px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>AI 短剧分镜生产体系</h1>
+  <p class="sub">从剧本到成片的工业化生产方法论：资产卡体系、角色多版本管理、分镜表规范与生产铁律。<br>
+  以下为脱敏演示版本，剧名与角色名均为虚构，展示的是可迁移的生产方法与表单结构。</p>
+  <span class="tag">竖屏 9:16</span><span class="tag">AI 视频生成适配</span><span class="tag">多集长剧管控</span><span class="tag">资产一致性</span>
+</header>
+
+<h2>体系概览</h2>
+<p class="lead">已用该体系完整交付 3 部 AI 剧集项目，累计 600+ 镜头。下列数据取自其中规模最大的一部。</p>
+<div class="stats">
+  <div class="stat"><div class="n">30</div><div class="l">集数</div></div>
+  <div class="stat"><div class="n">256</div><div class="l">镜头总数</div></div>
+  <div class="stat"><div class="n">26</div><div class="l">场景卡</div></div>
+  <div class="stat"><div class="n">18</div><div class="l">角色版本卡</div></div>
+  <div class="stat"><div class="n">13</div><div class="l">道具卡</div></div>
+  <div class="stat"><div class="n">≤15″</div><div class="l">单镜时长上限</div></div>
+</div>
+
+<h2>一、生产流程</h2>
+<div class="flow">
+  <i>剧本拆解 <em>Beat 划分</em></i><i>→</i>
+  <i>风格定调</i><i>→</i>
+  <i>资产提取 <em>角色/场景/道具</em></i><i>→</i>
+  <i>逐集分镜表</i><i>→</i>
+  <i>Prompt 生成</i><i>→</i>
+  <i>四道交叉校验</i><i>→</i>
+  <i>成片精修</i>
+</div>
+<p class="lead">核心思路：<b>把 AI 生成的不确定性，前置到分镜设计阶段解决</b>。绝大多数废片不是生成时运气不好，而是分镜给 AI 出了它做不到的题。</p>
+
+<h2>二、分镜表结构</h2>
+<p class="lead">每一镜都是一条可直接进生产平台的结构化指令，字段设计如下（示例为虚构剧目《雨夜归来》EP1）。</p>
+<div class="scroll">
+<table>
+  <tr><th>EP</th><th>镜号</th><th>场景</th><th>人物</th><th>道具</th><th>画面内容</th><th>时长</th><th>宽高比</th></tr>
+  <tr><td>EP1</td><td>1</td><td>雨夜街道</td><td>女主-落魄版</td><td>—</td>
+      <td>暴雨夜，女主跪在积水中抱住高烧的女儿，路灯在雨幕中晕开昏黄光斑，远处别墅轮廓冷漠。</td><td>10s</td><td>9:16</td></tr>
+  <tr><td>EP1</td><td>2</td><td>别墅大门</td><td>前夫-标准版、小三-标准版</td><td>—</td>
+      <td>门廊暖光下，前夫撑黑伞居高临下，小三挽着他的手臂掩嘴轻笑。仰角，压迫感构图。</td><td>12s</td><td>9:16</td></tr>
+  <tr><td>EP1</td><td>3</td><td>别墅大门</td><td>女主-落魄版、小三-标准版</td><td>硬币</td>
+      <td>女主护住咳嗽的女儿仰头哀求，小三从包中捻出一枚硬币掷向泥水。硬币落水特写。</td><td>13s</td><td>9:16</td></tr>
+  <tr><td>EP1</td><td>4</td><td>雨夜街道</td><td>女主-落魄版、老管家</td><td>烫金契约</td>
+      <td>一双高级皮鞋停在女主面前，黑伞撑开遮住雨幕。老管家俯身，递出烫金边框的契约文件。</td><td>13s</td><td>9:16</td></tr>
+</table>
+</div>
+<div class="note">
+字段设计的用意：<b>场景 / 人物 / 道具三列全部引用资产卡名称</b>，不写自由描述——这是保证 200+ 镜头视觉一致性的关键。生成时调取的是同一份资产定义，而不是每次重新描述一遍。
+</div>
+
+<h2>三、角色多版本管理</h2>
+<p class="lead">长剧的角色不是一张卡走到底。女主随剧情推进有 7 个状态版本，每版独立建卡、绑定集数区间，保证「她还是她，但气场变了」。</p>
+<div class="scroll">
+<table>
+  <tr><th>版本</th><th>集数</th><th>造型要点</th><th>叙事功能</th></tr>
+  <tr><td>落魄版</td><td>EP1–2</td><td>凌乱湿发、廉价旧毛衣、疲惫面容</td><td>建立底层处境，激发观众保护欲</td></tr>
+  <tr><td>觉醒版</td><td>EP3–5</td><td>朴素依旧，但眼神转冷、手握黑卡</td><td>转折信号：被动 → 主动</td></tr>
+  <tr><td>反击版</td><td>EP6–7</td><td>深红丝绒礼服、利落短发、正红唇</td><td>第一次当众打脸的视觉爆点</td></tr>
+  <tr><td>高光版</td><td>EP12–15</td><td>碎钻高定礼服、丝绒长手套、盘发</td><td>全剧最美造型，情绪峰值</td></tr>
+  <tr><td>掌权版</td><td>EP17</td><td>白色高定职业套装、凌厉剪裁</td><td>身份完成转换</td></tr>
+  <tr><td>爆发版</td><td>EP20–22</td><td>赤脚披发、泥水与血、极端状态</td><td>母性爆发，全剧张力最高点</td></tr>
+  <tr><td>终局版</td><td>EP26–30</td><td>酒红高定西装、伤疤如勋章</td><td>涅槃收束，人物弧光闭环</td></tr>
+</table>
+</div>
+<div class="card">
+  <h3>一致性怎么锁住</h3>
+  <ul>
+    <li><b>参考图锁定</b>：每个版本一张正面全身参考图，统一为服装参考照规格，多角度生成时以它为基准</li>
+    <li><b>特征词表</b>：年龄、发色发型、瞳色、体态等固定描述词跨版本继承，只替换可变项（服装、妆容、状态）</li>
+    <li><b>版本绑定集数</b>：分镜表人物列直接写「角色-版本名」，杜绝跨集串版</li>
+    <li><b>道具随人物成长</b>：从廉价婚戒到顶级黑卡，道具卡本身就是人物弧光的物证</li>
+  </ul>
+</div>
+
+<h2>四、资产卡字段设计</h2>
+<p class="lead">角色 / 场景 / 道具三类资产统一表结构，中文描述用于团队沟通，英文创意描述直接用于生成。</p>
+<div class="scroll">
+<table>
+  <tr><th>资产类型</th><th>名称</th><th>描述（团队沟通）</th><th>创意描述（生成用）</th></tr>
+  <tr><td>场景</td><td>雨夜街道</td><td>暴风雨中的城市住宅区街道，昏黄路灯在雨幕中扩散，积水反光，远处别墅轮廓</td>
+      <td>Stormy night residential street, dim streetlamps diffusing through rain, reflective puddles…</td></tr>
+  <tr><td>道具</td><td>烫金契约</td><td>烫金边框厚羊皮纸的婚姻协议，印有家族族徽与条款</td>
+      <td>Gold-embossed marriage contract on thick parchment, family crest…</td></tr>
+  <tr><td>角色</td><td>女主-反击版</td><td>深红丝绒礼服显腰线，短发利落，正红唇烟熏妆，黑色高跟鞋</td>
+      <td>Full body front-facing costume reference, same character, deep red velvet gown…</td></tr>
+</table>
+</div>
+
+<h2>五、生产铁律</h2>
+<p class="lead">这些规则不是理论，是拿废片换来的——每一条对应一类高频失败。</p>
+<div class="rules">
+  <div class="rule"><b>每镜 ≤ 15 秒</b><span>超出后 AI 的动作连贯性与人物稳定性显著劣化，长镜头一律拆分</span></div>
+  <div class="rule"><b>每镜单一场景</b><span>一镜内切换环境必崩，场景切换只能发生在镜与镜之间</span></div>
+  <div class="rule"><b>台词零遗漏校验</b><span>分镜完成后逐句比对剧本，防止整段台词在拆镜时丢失</span></div>
+  <div class="rule"><b>画外音正确处理</b><span>角色不在镜内则不列入人物列，避免 AI 凭空生成不该出现的人</span></div>
+  <div class="rule"><b>高危画面前置规避</b><span>手部特写、多人复杂交互等 AI 弱项，在分镜阶段就换表达方式</span></div>
+  <div class="rule"><b>审核安全改写</b><span>敏感视觉元素做等效置换：删概念不删情绪，冲击力保留，合规也过</span></div>
+</div>
+
+<h2>六、四道交叉校验</h2>
+<div class="card">
+  <ul>
+    <li><b>台词覆盖校验</b>——剧本每句台词都能在分镜表中找到落点</li>
+    <li><b>镜号连续校验</b>——每集镜号无断号、无重号，总时长符合单集规格</li>
+    <li><b>名称一致性校验</b>——分镜表引用的场景 / 人物 / 道具名称，必须存在于资产卡且拼写一致</li>
+    <li><b>画外音归属校验</b>——旁白与画外台词的角色归属正确，不误入画面人物列</li>
+  </ul>
+</div>
+
+<div class="note">
+<b>关于本页：</b>为保护在职项目的内容资产，本页所有剧名、角色名、剧情均为虚构演示，仅展示可迁移的生产方法与表单结构。真实项目的分镜表、资产卡与成片可在面试中当面说明。
+</div>
+
+<footer>
+权可莹 · AI 短剧内容生产 ｜
+邮箱 quankeying540@gmail.com ｜
+GitHub <a href="https://github.com/keyingQuan">github.com/keyingQuan</a>
+</footer>
+
+</div>
+</body>
+</html>
